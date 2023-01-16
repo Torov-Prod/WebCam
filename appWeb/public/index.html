@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <video autoplay id="vid" style="display:none"></video>
+    <canvas id="canvas" width="640" height="480" style="border:1px solid #d3d3d3;"></canvas>
+    <button onclick="startBroadcasting()">Start Broadcasting</button>
+    <button onclick="stopBroadcasting()">Stop Broadcasting</button>
+    <button onclick="sendSnapshot()">Send</button>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <script>
+        
+        var video = document.querySelector("#vid"),
+        canvas = document.querySelector('#canvas'),
+        ctx = canvas.getContext('2d'),
+        localMediaStream = null,
+        onCameraFail = function (e) {
+            console.log('Camera did not work.', e); // Исключение на случай, если камера не работает
+        };
+        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+        navigator.getUserMedia({video: true}, function(stream) {
+            video.srcObject = stream;
+            localMediaStream = stream;
+        }, onCameraFail);
+        cameraInterval = setInterval(function(){ snapshot();}, 1);
+        function snapshot(){
+            if(localMediaStream){
+                ctx.drawImage(video, 0, 0);
+            }
+        }
+        function sendSnapshot(){
+            if(!isBroadcasting){
+                isBroadcasting = true;
+                $.post("/AddPhoto",
+                    {
+                        text: ctx.canvas.toDataURL("image/webp", 0.1) // quality - качество изображения(float)
+                    },
+                    function(result){
+                        isBroadcasting = false;
+                        console.log(result); // На случай, если что-то пойдёт не так
+                    }
+                )
+            };
+        }
+        var isBroadcasting = false,
+            broadcastingTimer;
+        
+        // И добавим обработчики кнопок начала и завершения вещания
+        function startBroadcasting(){
+            broadcastingTimer = setInterval(sendSnapshot, 100);
+        }
+        function stopBroadcasting(){
+            clearInterval(broadcastingTimer);
+        }
+    </script>
+</body>
+<!-- 
+var video = document.getElementById("vid"),
+canvas = document.getElementById('canvas'),
+ctx = canvas.getContext('2d'),
+localMediaStream = null,
+isBroadcasting = false,
+broadcastingTimer,
+onCameraFail = function (e) {
+    console.log('Camera did not work.', e); // Исключение на случай, если камера не работает
+};
+//navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+//window.URL = window.URL || window.webkitURL;
+navigator.getUserMedia({
+    video: true,
+    audio: false
+}, function(stream) {
+video.srcObject = stream;
+localMediaStream = stream;
+}, onCameraFail);
+// копирование видео в канвас
+cameraInterval = setInterval(function(){ snapshot();}, 1);
+function snapshot(){
+if(localMediaStream){
+      ctx.drawImage(video, 0, 0);
+}
+}
+
+function startBroadcasting(){
+broadcastingTimer = setInterval(SendSnapshot, 1);
+}
+function stopBroadcasting(){
+clearInterval(broadcastingTimer);
+}
+
+// отправка фото на сервер
+function SendSnapshot(){
+if(localMediaStream && !isBroadcasting){
+    isBroadcasting = true;
+            $.post("/photo",
+                    {
+                        p: "new",
+                        text: ctx.canvas.toDataURL("image/webp", 140) // quality - качество изображения(float)
+                    },
+        function(result){
+            console.log(result); // На случай, если что-то пойдёт не так
+            isBroadcasting = false;
+        }
+    );
+}
+}*/
+ -->
+</html>
